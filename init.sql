@@ -1,5 +1,5 @@
 create table deliveries(
-    id 		int primary key,
+    id 		serial primary key,
     name 	text not null,
     phone 	text not null,
     zip 	text not null,
@@ -39,18 +39,18 @@ create table models(
 );
 
 create table items(
-    chrt_id 		int primary key,
+    chrt_id 	 int primary key,
     track_number text unique not null,
-    price 		int not null,
-    rid 		text not null,
-    name 		text not null,
-    sale 		int not null,
-    size 		text not null,
-    total_price 	int not null,
-    nm_id		int not null,
-    brand 		text not null,
-    status 		int not null,
-    models_id 	uuid references models(order_uid) not null
+    price 		 int not null,
+    rid 		 text not null,
+    name 		 text not null,
+    sale 		 int not null,
+    size 		 text not null,
+    total_price  int not null,
+    nm_id		 int not null,
+    brand 		 text not null,
+    status 		 int not null,
+    models_id 	 uuid references models(order_uid) not null
 );
 
 insert into deliveries values (

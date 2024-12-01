@@ -22,6 +22,7 @@ services:
     restart: always
     depends_on:
       - postgres
+      - kafka
     expose:
       - ${APISERVER_PORT}
     ports:
@@ -33,6 +34,25 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_DB: ${POSTGRES_DB}
+      KAFKA_PORT: ${KAFKA_PORT}
+      KAFKA_HOST: ${KAFKA_HOST}
+
+  zookeeper:
+    restart: always
+    container_name: zookeper
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:latest
+    restart: always
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:${KAFKA_PORT}
 
 volumes:
   db-data:

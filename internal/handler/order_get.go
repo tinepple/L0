@@ -6,5 +6,11 @@ import (
 )
 
 func (h *Handler) GetOrder(c *gin.Context) {
-	c.JSON(http.StatusOK, h.cache[c.Param("orderUid")])
+	value, ok := h.cache[c.Param("orderUid")]
+	if !ok {
+		c.Status(http.StatusNotFound)
+		return
+	}
+
+	c.JSON(http.StatusOK, value)
 }

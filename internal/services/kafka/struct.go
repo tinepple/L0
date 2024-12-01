@@ -1,4 +1,4 @@
-package orders
+package kafka
 
 import "time"
 
@@ -11,6 +11,7 @@ type Delivery struct {
 	Region  string `json:"region"`
 	Email   string `json:"email"`
 }
+
 type Item struct {
 	ChrtID      int    `json:"chrt_id"`
 	TrackNumber string `json:"track_number"`
@@ -36,7 +37,8 @@ type Payment struct {
 	GoodsTotal   int    `json:"goods_total"`
 	CustomFee    int    `json:"custom_fee"`
 }
-type OrderResponse struct {
+
+type Message struct {
 	OrderUID          string    `json:"order_uid"`
 	TrackNumber       string    `json:"track_number"`
 	Entry             string    `json:"entry"`
