@@ -1,4 +1,4 @@
-package kafka
+package messages
 
 import "time"
 
@@ -38,7 +38,7 @@ type Payment struct {
 	CustomFee    int    `json:"custom_fee"`
 }
 
-type Message struct {
+type Order struct {
 	OrderUID          string    `json:"order_uid"`
 	TrackNumber       string    `json:"track_number"`
 	Entry             string    `json:"entry"`

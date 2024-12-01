@@ -2,6 +2,8 @@ package main
 
 import (
 	"WBL0/internal/handler"
+	"WBL0/internal/messages"
+	"WBL0/internal/services/cache"
 	"WBL0/internal/services/kafka"
 	"WBL0/internal/services/orders"
 	"WBL0/internal/storage"
@@ -9,9 +11,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Shopify/sarama"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -46,6 +50,16 @@ func main() {
 		log.Fatalf("Failed to create storage: %v", err)
 	}
 
+	internalCache := cache.NewCache()
+	for _, order := range allOrders {
+		_ = internalCache.Set(order.OrderUID, order)
+	}
+
+	apiHandler := handler.New(internalCache)
+	if err != nil {
+		log.Fatalf("Failed to create handler: %v", err)
+	}
+
 	consumer, err := sarama.NewConsumer([]string{fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT"))}, nil)
 	if err != nil {
 		log.Fatalf("Failed to create consumer: %v", err)
@@ -58,8 +72,13 @@ func main() {
 	}
 	defer partConsumer.Close()
 
-	apiHandler := handler.New(allOrders)
-	kafkaService := kafka.New(partConsumer, storageRepo, apiHandler)
+	kafkaService := kafka.New(partConsumer, storageRepo, internalCache)
+
+	go func() {
+		if err = kafkaService.Consume(context.Background()); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	producer, err := sarama.NewSyncProducer(
 		[]string{fmt.Sprintf("%s:%s", os.Getenv("KAFKA_HOST"), os.Getenv("KAFKA_PORT"))}, nil,
@@ -69,57 +88,7 @@ func main() {
 	}
 	defer producer.Close()
 
-	message := storage.Message{
-		OrderUID:    "ebfe6316-e5f8-f465-38eb-f79b97b798c5",
-		TrackNumber: "123",
-		Entry:       "123",
-		Delivery: storage.Delivery{
-			Name:    "123",
-			Phone:   "123",
-			Zip:     "123",
-			City:    "123",
-			Address: "123",
-			Region:  "123",
-			Email:   "123",
-		},
-		Payment: storage.Payment{
-			Transaction:  "ebfe6316-e5f8-f465-38eb-f79b97b798c8",
-			RequestID:    "123",
-			Currency:     "123",
-			Provider:     "123",
-			Amount:       123,
-			PaymentDt:    123,
-			Bank:         "123bank",
-			DeliveryCost: 123,
-			GoodsTotal:   123,
-			CustomFee:    123,
-		},
-		Items: []storage.Item{
-			{
-				ChrtID:      12,
-				TrackNumber: "12",
-				Price:       12,
-				Rid:         "12",
-				Name:        "12",
-				Sale:        12,
-				Size:        "12",
-				TotalPrice:  12,
-				NmID:        12,
-				Brand:       "12",
-				Status:      12,
-			},
-		},
-		Locale:            "123",
-		InternalSignature: "123",
-		CustomerID:        "123",
-		DeliveryService:   "123",
-		Shardkey:          "123",
-		SmID:              123,
-		DateCreated:       time.Time{},
-		OofShard:          "123",
-	}
-
-	bytes, err := json.Marshal(message)
+	bytes, err := json.Marshal(generateTestMessage())
 	if err != nil {
 		log.Fatalf("Failed to create storage: %v", err)
 	}
@@ -130,6 +99,7 @@ func main() {
 	}
 
 	ticker := time.NewTicker(1 * time.Minute)
+
 	go func() {
 		for {
 			select {
@@ -142,13 +112,70 @@ func main() {
 		}
 	}()
 
-	go func() {
-		if err = kafkaService.Consume(context.Background()); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APISERVER_PORT")), apiHandler); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func generateTestMessage() messages.Order {
+	return messages.Order{
+		OrderUID:    uuid.New().String(),
+		TrackNumber: randStr(10),
+		Entry:       randStr(10),
+		Delivery: messages.Delivery{
+			Name:    randStr(10),
+			Phone:   randStr(10),
+			Zip:     randStr(10),
+			City:    randStr(10),
+			Address: randStr(10),
+			Region:  randStr(10),
+			Email:   randStr(10),
+		},
+		Payment: messages.Payment{
+			Transaction:  uuid.New().String(),
+			RequestID:    randStr(10),
+			Currency:     randStr(10),
+			Provider:     randStr(10),
+			Amount:       rand.Intn(1000),
+			PaymentDt:    rand.Intn(1000),
+			Bank:         randStr(10),
+			DeliveryCost: rand.Intn(1000),
+			GoodsTotal:   rand.Intn(1000),
+			CustomFee:    rand.Intn(1000),
+		},
+		Items: []messages.Item{
+			{
+				ChrtID:      rand.Intn(1000),
+				TrackNumber: randStr(10),
+				Price:       rand.Intn(1000),
+				Rid:         randStr(10),
+				Name:        randStr(10),
+				Sale:        rand.Intn(1000),
+				Size:        randStr(10),
+				TotalPrice:  rand.Intn(1000),
+				NmID:        rand.Intn(1000),
+				Brand:       randStr(10),
+				Status:      rand.Intn(1000),
+			},
+		},
+		Locale:            randStr(10),
+		InternalSignature: randStr(10),
+		CustomerID:        randStr(10),
+		DeliveryService:   randStr(10),
+		Shardkey:          randStr(10),
+		SmID:              rand.Intn(1000),
+		DateCreated:       time.Now(),
+		OofShard:          randStr(10),
+	}
+}
+
+var number = []byte("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func randStr(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		// randomly select 1 character from given charset
+		b[i] = number[rand.Intn(len(number))]
+	}
+	return string(b)
 }

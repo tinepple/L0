@@ -8,17 +8,17 @@ import (
 type service struct {
 	consumer sarama.PartitionConsumer
 	storage  Storage
-	handler  Handler
+	cache    Cache
 }
 
 type Service interface {
 	Consume(ctx context.Context) error
 }
 
-func New(consumer sarama.PartitionConsumer, storage Storage, handler Handler) Service {
+func New(consumer sarama.PartitionConsumer, storage Storage, cache Cache) Service {
 	return &service{
 		consumer: consumer,
 		storage:  storage,
-		handler:  handler,
+		cache:    cache,
 	}
 }

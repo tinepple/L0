@@ -1,23 +1,26 @@
 package orders
 
-import "context"
+import (
+	"WBL0/internal/messages"
+	"context"
+)
 
-func (s *Service) GetOrders(ctx context.Context) ([]OrderResponse, error) {
+func (s *Service) GetOrders(ctx context.Context) ([]messages.Order, error) {
 	orders, err := s.storage.GetOrders(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []OrderResponse
+	var result []messages.Order
 	for _, order := range orders {
 		items, err := s.storage.GetItems(ctx, order.OrderUID)
 		if err != nil {
 			return nil, err
 		}
 
-		resultItems := make([]Item, 0, len(items))
+		resultItems := make([]messages.Item, 0, len(items))
 		for _, item := range items {
-			resultItems = append(resultItems, Item{
+			resultItems = append(resultItems, messages.Item{
 				ChrtID:      item.ChrtID,
 				TrackNumber: item.TrackNumber,
 				Price:       item.Price,
@@ -32,11 +35,11 @@ func (s *Service) GetOrders(ctx context.Context) ([]OrderResponse, error) {
 			})
 		}
 
-		result = append(result, OrderResponse{
+		result = append(result, messages.Order{
 			OrderUID:    order.OrderUID,
 			TrackNumber: order.TrackNumber,
 			Entry:       order.Entry,
-			Delivery: Delivery{
+			Delivery: messages.Delivery{
 				Name:    order.Name,
 				Phone:   order.Phone,
 				Zip:     order.Zip,
@@ -45,7 +48,7 @@ func (s *Service) GetOrders(ctx context.Context) ([]OrderResponse, error) {
 				Region:  order.Region,
 				Email:   order.Email,
 			},
-			Payment: Payment{
+			Payment: messages.Payment{
 				Transaction:  order.Transaction,
 				RequestID:    order.RequestID,
 				Currency:     order.Currency,

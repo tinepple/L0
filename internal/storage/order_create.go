@@ -1,11 +1,12 @@
 package storage
 
 import (
+	"WBL0/internal/messages"
 	"context"
 	sq "github.com/Masterminds/squirrel"
 )
 
-func (s *Storage) CreateOrder(ctx context.Context, model Message) error {
+func (s *Storage) CreateOrder(ctx context.Context, model messages.Order) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		return err
