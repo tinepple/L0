@@ -1,3 +1,3 @@
-# backend-bootcamp-assignment-2024
+# Тестовое задание L0
 
 Для запуска необходимо выполнить команду docker-compose up -d --build
