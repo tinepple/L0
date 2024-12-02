@@ -66,7 +66,7 @@ func main() {
 	}
 	defer consumer.Close()
 
-	partConsumer, err := consumer.ConsumePartition("ping", 0, sarama.OffsetNewest)
+	partConsumer, err := consumer.ConsumePartition("orders", 0, sarama.OffsetNewest)
 	if err != nil {
 		log.Fatalf("Failed to consume partition: %v", err)
 	}
@@ -88,22 +88,21 @@ func main() {
 	}
 	defer producer.Close()
 
-	bytes, err := json.Marshal(generateTestMessage())
-	if err != nil {
-		log.Fatalf("Failed to create storage: %v", err)
-	}
-
-	msg := &sarama.ProducerMessage{
-		Topic: "ping",
-		Value: sarama.ByteEncoder(bytes),
-	}
-
 	ticker := time.NewTicker(1 * time.Minute)
-
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
+				bytes, err := json.Marshal(generateTestMessage())
+				if err != nil {
+					log.Fatalf("Failed to create storage: %v", err)
+				}
+
+				msg := &sarama.ProducerMessage{
+					Topic: "orders",
+					Value: sarama.ByteEncoder(bytes),
+				}
+
 				_, _, err = producer.SendMessage(msg)
 				if err != nil {
 					log.Fatalf("Failed to create storage: %v", err)
